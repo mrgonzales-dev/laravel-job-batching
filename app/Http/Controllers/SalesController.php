@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-use App\Models\Sales;
-use PDO;
+use App\Jobs\SalesCsvProcess;
 
 class SalesController extends Controller
 {
@@ -15,58 +14,40 @@ class SalesController extends Controller
 
     }
 
-    public function upload(Request $request) {
-        if(request()->has('csvfile')) {
+    public function upload(Request $request)
+    {
+        if ($request->hasFile('csvfile')) {
+            $file = $request->file('csvfile');
+            $rows = array_map('str_getcsv', file($file->getRealPath()));
 
-            // $data = array_map('str_getcsv', file(request()->csvfile));
-            $data = file(request()->csvfile);
-            // $header = $data[0];
-            // unset($data[0]);
+            $header = $rows[0];
+            unset($rows[0]);
 
-
-            // Chunking file
-            $chunks = array_chunk($data, 100);
-
-            // Convert 1000 records into a new csv file
+            $chunks = array_chunk($rows, 100);
+            $path = resource_path('temp');
+            if (!file_exists($path)) mkdir($path, 0777, true);
 
             foreach ($chunks as $key => $chunk) {
+                // Add header back to each chunk
+                array_unshift($chunk, $header);
+                $lines = array_map(function ($row) {
+                    return implode(',', $row);
+                }, $chunk);
 
-                $name = "/tmp{$key}.csv";
-                $path = resource_path('temp');
-
-                file_put_contents($path . $name, implode("\n", $chunk));
+                $filename = "chunk_{$key}.csv";
+                file_put_contents($path . DIRECTORY_SEPARATOR . $filename, implode("\n", $lines));
             }
 
             return 'success';
         }
-            return 'wengk wengk wala man';
+
+        return 'wengk wengk wala man';
     }
 
-
-    public function store() {
-
-        $path = resource_path('temp');
-        $files = glob("$path/*.csv");
-
-        $header = [];
-
-        foreach ($files as $key => $file) {
-        $data = array_map('str_getcsv', file($file));
-
-            if ($key === 0 ) {
-                $header = $data[0];
-                unset($data[0]);
-
-            }
-
-            foreach ($data as $sale) {
-
-                $saleData = array_combine($header, $sale);
-                Sales::create($saleData);
-            }
-
-        }
-        return $files;
+    public function store()
+    {
+        SalesCsvProcess::dispatch();
+        return 'stored';
     }
 
 
