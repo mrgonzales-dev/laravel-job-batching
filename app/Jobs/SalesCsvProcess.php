@@ -12,13 +12,15 @@ class SalesCsvProcess implements ShouldQueue
     use Queueable;
 
 
-
+    public  $data;
+    public  $header;
     /**
      * Create a new job instance.
      */
-    public function __construct()
+    public function __construct($data, $header)
     {
-        //
+        $this->data = $data;
+        $this->header = $header;
     }
 
     /**
@@ -26,26 +28,29 @@ class SalesCsvProcess implements ShouldQueue
      */
     public function handle(): void
     {
-        $path = resource_path('temp');
-        $files = glob("$path/*.csv");
-
-        foreach ($files as $file) {
-            $data = array_map('str_getcsv', file($file));
-            $header = $data[0];
-            unset($data[0]);
-
-            foreach ($data as $row) {
-                $row = array_slice($row, 0, count($header));
-                if (count($row) !== count($header)) {
-                    Log::warning('Bad row in CSV', ['row' => $row]);
+        foreach ($this->data as $row) {
+            try {
+                // Skip header-like rows
+                if (array_map('strtolower', $row) === array_map('strtolower', $this->header)) {
                     continue;
                 }
 
-                $saleData = array_combine($header, $row);
-                Sales::create($saleData);
-            }
+                $row = array_slice($row, 0, count($this->header));
 
-            unlink($file);
+                if (count($row) !== count($this->header)) {
+                    Log::warning('Malformed row in CSV', ['row' => $row]);
+                    continue;
+                }
+
+                $saleData = array_combine($this->header, $row);
+
+                Sales::create($saleData);
+            } catch (\Throwable $e) {
+                Log::error('Row insert failed', [
+                    'row' => $row,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 }
