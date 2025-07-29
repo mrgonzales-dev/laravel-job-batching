@@ -74,6 +74,16 @@ class SalesController extends Controller
         }
     }
 
+    private function isDone($batch) {
+
+        if ($batch->progress() === 100) {
+           return true;
+        } elseif(!$batch->progress() < 100) {
+           return false;
+        }
+
+    }
+
     public function batch()
     {
         $batchId = request('id');
@@ -83,16 +93,20 @@ class SalesController extends Controller
             return response()->json(['error' => 'No batch ID provided.'], 400);
         }
 
-        //finds the batch
+        //Finds the batch
         $batch = Bus::findBatch($batchId);
 
-        if (!$batch) {
-            return response()->json(['error' => 'Batch not found.'], 404);
+        // if...and
+        if (!$batch || $this->isDone($batch)) {
+            return 'tapus na ata or di ko mahanap';
         }
+
+
         return response()->json([
             'progress ' => $batch->progress(),
             'pendingJobs ' => $batch->pendingJobs,
             'status' => $batch->status,
+            'totalJobs' => $batch->totalJobs
         ]);
     }
 }
