@@ -44,7 +44,6 @@ class SalesCsvProcess implements ShouldQueue
 
                 $saleData = array_combine($this->header, $row);
                 Sales::create($saleData);
-
             } catch (\Throwable $e) {
                 Log::error('Row insert failed', [
                     'row' => $row,

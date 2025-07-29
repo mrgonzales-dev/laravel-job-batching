@@ -37,7 +37,7 @@ class SalesController extends Controller
             $header = $rows[0];
             unset($rows[0]);
 
-            $chunks = array_chunk($rows, 100);
+            $chunks = array_chunk($rows, 1000);
 
             if (!File::exists($path)) {
                 File::makeDirectory($path, 0777, true);
@@ -74,9 +74,10 @@ class SalesController extends Controller
 
             foreach ($files as $file) {
                 try {
-                    $data = array_map('str_getcsv', file($file));
+                    // $data = array_map('str_getcsv', file($file));
 
-                    // $data = array_map(fn($row) => str_getcsv($row, separator: ',', escape: '\\', enclosure: '"'), file($file));
+                    $data = array_map(fn($row) => str_getcsv($row, separator: ',', escape: '\\', enclosure: '"'), file($file));
+
 
                     if (count($data) < 2) {
                         Log::warning('CSV file too short. Skipping.', ['file' => $file]);
