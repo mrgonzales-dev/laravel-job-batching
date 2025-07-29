@@ -27,6 +27,8 @@ class SalesController extends Controller
 
             $rows = array_map(fn($v) => str_getcsv($v, separator: ',', escape: '\\', enclosure: '"'), file($file->getRealPath()));
 
+            dump($rows);
+
             if (count($rows) < 2) {
                 Log::warning('Upload failed: CSV too short or empty.', ['rows' => $rows]);
                 return response()->json(['error' => 'CSV must have at least a header and one data row.'], 422);
@@ -42,20 +44,11 @@ class SalesController extends Controller
             }
 
             foreach ($chunks as $key => $chunk) {
+                array_unshift($chunk, $header);
                 $lines = array_map(fn($row) => implode(',', $row), $chunk);
                 $filename = "chunk_{$key}.csv";
                 $fullPath = $path . DIRECTORY_SEPARATOR . $filename;
-
                 file_put_contents($fullPath, implode("\n", $lines));
-
-                try {
-                    SalesCsvProcess::dispatch($chunk, $header);
-                } catch (\Throwable $e) {
-                    Log::error("Job dispatch failed for chunk {$key}", [
-                        'file' => $fullPath,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
             }
 
             return response()->json(['status' => 'success']);
@@ -82,6 +75,9 @@ class SalesController extends Controller
             foreach ($files as $file) {
                 try {
                     $data = array_map('str_getcsv', file($file));
+
+                    // $data = array_map(fn($row) => str_getcsv($row, separator: ',', escape: '\\', enclosure: '"'), file($file));
+
                     if (count($data) < 2) {
                         Log::warning('CSV file too short. Skipping.', ['file' => $file]);
                         unlink($file);
