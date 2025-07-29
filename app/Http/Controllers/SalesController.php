@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Jobs\SalesCsvProcess;
-use Illuminate\Support\Facades\File;
-use PgSql\Lob;
+use Illuminate\Support\Facades\Bus;
+
 
 class SalesController extends Controller
 {
@@ -38,6 +38,8 @@ class SalesController extends Controller
 
             $chunks = array_chunk($rows, 1000);
 
+            $batchJobs = [];
+
             foreach ($chunks as $key => $chunk) {
 
                 try {
@@ -52,7 +54,7 @@ class SalesController extends Controller
                         continue;
                     }
 
-                    SalesCsvProcess::dispatch($chunk, $header);
+                    $batchJobs[] = new SalesCsvProcess($chunk, $header);
 
                 } catch (\Throwable $e) {
                     Log::error('Failed to dispatch job for file', [
@@ -61,7 +63,8 @@ class SalesController extends Controller
                     ]);
                 }
             }
-            return response()->json(['status' => 'success']);
+            Bus::batch($batchJobs)->dispatch();
+            return $batchJobs;
         } catch (\Throwable $e) {
             Log::critical('Unexpected upload error', [
                 'error' => $e->getMessage(),
@@ -71,52 +74,25 @@ class SalesController extends Controller
         }
     }
 
+    public function batch()
+    {
+        $batchId = request('id');
 
-    // NOTE: Not used anymore
-    // public function store()
-    // {
-    //     try {
-    //         $path = resource_path('temp');
-    //         $files = glob("$path/*.csv");
-    //
-    //         if (empty($files)) {
-    //             Log::info('No CSV files found in temp path.');
-    //             return response()->json(['message' => 'No files to process.'], 200);
-    //         }
-    //
-    //         foreach ($files as $file) {
-    //             try {
-    //
-    //                 $data = array_map(fn($row) => str_getcsv($row, separator: ',', escape: '\\', enclosure: '"'), file($file));
-    //
-    //
-    //                 if (count($data) < 2) {
-    //                     Log::warning('CSV file too short. Skipping.', ['file' => $file]);
-    //                     unlink($file);
-    //                     continue;
-    //                 }
-    //
-    //                 $header = $data[0];
-    //                 unset($data[0]);
-    //
-    //                 SalesCsvProcess::dispatch($data, $header);
-    //                 unlink($file);
-    //             } catch (\Throwable $e) {
-    //                 Log::error('Failed to dispatch job for file', [
-    //                     'file' => $file,
-    //                     'error' => $e->getMessage(),
-    //                 ]);
-    //                 // optionally: rename or move file to avoid re-processing
-    //             }
-    //         }
-    //
-    //         return response()->json(['status' => 'stored']);
-    //     } catch (\Throwable $e) {
-    //         Log::critical('Unexpected store error', [
-    //             'error' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString(),
-    //         ]);
-    //         return response()->json(['error' => 'Internal Server Error'], 500);
-    //     }
-    // }
+        if (!$batchId) {
+
+            return response()->json(['error' => 'No batch ID provided.'], 400);
+        }
+
+        //finds the batch
+        $batch = Bus::findBatch($batchId);
+
+        if (!$batch) {
+            return response()->json(['error' => 'Batch not found.'], 404);
+        }
+        return response()->json([
+            'progress ' => $batch->progress(),
+            'pendingJobs ' => $batch->pendingJobs,
+            'status' => $batch->status,
+        ]);
+    }
 }
