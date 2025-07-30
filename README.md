@@ -1,7 +1,3 @@
-Here’s a polished **README.md** template for your GitHub repository, *laravel-job-batching*, clearly explaining what you built, how it works, and how to set it up:
-
----
-
 # 📦 Laravel Job Batching - CSV Import & Progress Monitoring
 
 A Laravel-based example that demonstrates how to:
@@ -159,17 +155,3 @@ routes/web.php
 * Enable retrying failed jobs via `queue:retry-batch` command
 * Add `allowFailures()` to continue despite failure
 
----
-
-## 📞 Feedback & Contributions
-
-If you find issues or ideas to improve, feel free to submit an **issue** or **pull request**.
-Happy batching 🛠️🎯
-
-[1]: https://laravel.com/docs/12.x/queues?utm_source=chatgpt.com "Queues - Laravel 12.x - The PHP Framework For Web ..."
-[2]: https://www.youtube.com/watch?v=WI6jenTRizA&utm_source=chatgpt.com "8. Laravel Job Batching | Upload million records"
-[3]: https://themsaid.com/queue-job-batching-in-laravel-how-it-works?utm_source=chatgpt.com "Job batching in Laravel: How it works - Themsaid.com"
-[4]: https://dev.to/msnmongare/-how-to-implement-queue-in-laravel-9-4gjd?utm_source=chatgpt.com "How to Implement Queue in Laravel 9"
-[5]: https://medium.com/%40harrisrafto/manage-job-batches-efficiently-with-bus-batch-in-laravel-aed0edba7a74?utm_source=chatgpt.com "Manage job batches efficiently with Bus::batch in Laravel"
-[6]: https://riseuplabs.com/exporting-large-csv-data-sets-in-laravel-with-job-queue/?utm_source=chatgpt.com "Exporting Large CSV Data Sets in Laravel with Job Queue"
-[7]: https://dev.to/ayowandeapp/job-batching-in-laravel-and-vue-4hgb?utm_source=chatgpt.com "Job Batching in Laravel and Vue"
