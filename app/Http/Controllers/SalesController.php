@@ -63,8 +63,13 @@ class SalesController extends Controller
                     ]);
                 }
             }
-            Bus::batch($batchJobs)->dispatch();
-            return $batchJobs;
+            $batch = Bus::batch($batchJobs)->then(function ($batch) {
+                Log::info('Batch complete', ['batch' => $batch->id]);
+            })->dispatch();
+
+            session()->put('last_batch_id', $batch->id);
+
+            return redirect()->route('batch', ['id' => $batch->id]);
         } catch (\Throwable $e) {
             Log::critical('Unexpected upload error', [
                 'error' => $e->getMessage(),
@@ -74,39 +79,37 @@ class SalesController extends Controller
         }
     }
 
-    private function isDone($batch) {
+    public function showLastBranch() {
 
-        if ($batch->progress() === 100) {
-           return true;
-        } elseif(!$batch->progress() < 100) {
-           return false;
-        }
+        // persist
+        $batchId = session()->get('last_batch_id');
+        return view('batch-progress', ['id' => $batchId]);
 
     }
 
-    public function batch()
-    {
+    public function viewProgress(Request $request) {
+
+        $batchId = $request->id;
+        $batch = Bus::findBatch($batchId);
+        return response()->json([
+                'progress'      => $batch->progress(),
+                'processedJobs' => $batch->processedJobs(),
+                'totalJobs'     => $batch->totalJobs,
+                'failedJobs'    => $batch->failedJobs,
+                'pendingJobs'   => $batch->pendingJobs,
+                'status'        => $batch->status,
+                'finished_at'   => $batch->finished() ? now() : null,
+            ]);
+
+    }
+    public function batch() {
         $batchId = request('id');
-
         if (!$batchId) {
-
-            return response()->json(['error' => 'No batch ID provided.'], 400);
+            return response()->json(['error' => 'No batch ID provided'], 400);
         }
 
-        //Finds the batch
         $batch = Bus::findBatch($batchId);
 
-        // if...and
-        if (!$batch || $this->isDone($batch)) {
-            return 'tapus na ata or di ko mahanap';
-        }
-
-
-        return response()->json([
-            'progress ' => $batch->progress(),
-            'pendingJobs ' => $batch->pendingJobs,
-            'status' => $batch->status,
-            'totalJobs' => $batch->totalJobs
-        ]);
+        return view('batch-progress', ['id' => $batch->id]);
     }
 }
