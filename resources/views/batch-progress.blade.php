@@ -33,14 +33,13 @@
 
     <script>
         const batchId = '{{ $id }}';
-        console.log('id: ', batchId);
-        console.log('progress: ', batchId.progress);
         function fetchStatus() {
             axios.get(`/batch/view/${batchId}`)
                 .then(response => {
                     const data = response.data;
                     if (!data) return;
-                    console.log("progress: ", data)
+                    console.log("id: ",batchId)
+                    console.log("STATUS: ", data)
                     const statusEl = document.getElementById('status');
                     const progressBar = document.getElementById('progress-bar');
                     const processed = data.processedJobs;
