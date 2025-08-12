@@ -1,9 +1,14 @@
 <div class="bg-gray-100 min-h-screen flex items-center justify-center">
-  {{-- Tailwind CSS --}}
-    <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- #IMPORT ------------------------------------------------- -->
+    {{-- Tailwind CSS --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    {{-- import alert JS --}}
+    @vite('resources/js/alert.js')
     {{-- ✅ Axios for AJAX requests --}}
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!--------------------------------------------------------- #IMPORT -->
+
 
     <div class="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
         <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Batch Job Progress</h1>
@@ -31,6 +36,7 @@
         </div>
     </div>
 
+
     <script>
         const batchId = '{{ $id }}';
         function fetchStatus() {
@@ -54,8 +60,19 @@
                     progressBar.style.width = `${percent}%`;
 
                     if (data.finished_at) {
+
                         statusEl.textContent = failed > 0 ? 'Completed with Errors' : 'Completed';
                         statusEl.classList.add(failed > 0 ? 'text-red-600' : 'text-green-600');
+
+                        // #call sweetalert2 success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Batch job completed successfully.',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+
                     } else {
                         statusEl.textContent = failed > 0 ? 'Running (with Failures)' : 'Running...';
                         setTimeout(fetchStatus, 1000);
@@ -69,4 +86,5 @@
 
         fetchStatus();
     </script>
+
 </div>

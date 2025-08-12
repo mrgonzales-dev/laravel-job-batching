@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Jobs\SalesCsvProcess;
 use Illuminate\Support\Facades\Bus;
-
+use SweetAlert2\Laravel\Swal;
 
 class SalesController extends Controller
 {
@@ -89,8 +89,10 @@ class SalesController extends Controller
 
     public function viewProgress(Request $request) {
 
+
         $batchId = $request->id;
         $batch = Bus::findBatch($batchId);
+
         return response()->json([
                 'progress'      => $batch->progress(),
                 'processedJobs' => $batch->processedJobs(),
